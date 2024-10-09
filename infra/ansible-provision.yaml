@@ -1,0 +1,80 @@
+---
+- hosts: all
+
+  tasks:
+
+    - name: Install docker
+      ansible.builtin.apt:
+        name: docker.io
+        state: latest
+      become: true
+
+    - name: Build container image locally
+      environment:
+        DOCKER_HOST: 'unix:///Users/hendrikwillemrossouw/.docker/run/docker.sock'
+      community.docker.docker_image:
+        name: superlists
+        source: build
+        state: present
+        build:
+          path: ..
+          platform: linux/amd64
+        force_source: true
+      delegate_to: 127.0.0.1
+
+    - name: Export container image locally
+      environment:
+        DOCKER_HOST: 'unix:///Users/hendrikwillemrossouw/.docker/run/docker.sock'
+      community.docker.docker_image:
+        name: superlists
+        archive_path: /tmp/superlists-img.tar
+        source: local
+      delegate_to: 127.0.0.1
+
+    - name: Upload image to server
+      ansible.builtin.copy:
+        src: /tmp/superlists-img.tar
+        dest: /tmp/superlists-img.tar
+
+    - name: Import container image on server
+      community.docker.docker_image:
+        name: superlists
+        load_path: /tmp/superlists-img.tar
+        source: load
+        force_source: true
+        state: present
+      become: true
+
+    - name: Ensure .env file exists
+      ansible.builtin.template:
+        src: env.j2
+        dest: ~/superlists.env
+        force: false  # do not recreate file if it already exists.
+      vars:
+        host: "165.232.111.81"  # inventory_hostname
+        secret_key: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters') }}"
+
+    - name: Ensure db.sqlite3 file exists outside container
+      ansible.builtin.file:
+        path: /home/synapse/db.sqlite3
+        state: touch
+
+    - name: Run container
+      community.docker.docker_container:
+        name: superlists
+        state: started
+        image: superlists
+        recreate: true
+        env_file: /home/synapse/superlists.env
+        mounts:
+          - type: bind
+            source: /home/synapse/db.sqlite3
+            target: /src/db.sqlite3
+        ports: 80:8888
+      become: true
+
+    - name: Run migration inside container
+      community.docker.docker_container_exec:
+        container: superlists
+        command: ./manage.py migrate
+      become: true
