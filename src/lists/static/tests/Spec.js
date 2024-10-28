@@ -1,5 +1,3 @@
-console.log('Spec.js loading');
-
 describe('Superlists tests', () => {
   let testDiv;
   const inputId= 'id_text';
@@ -10,7 +8,6 @@ describe('Superlists tests', () => {
   let errorMsg;
 
   beforeEach(() => {
-    console.log('beforeEach');
     testDiv = document.createElement('div');
     testDiv.innerHTML = `
       <form>
@@ -32,14 +29,14 @@ describe('Superlists tests', () => {
   });
 
   it('error message should be hidden on input', () => {
-    initialize(inputSelector, errorSelector);
+    initialize(inputSelector);
     textInput.dispatchEvent(new InputEvent('input'));
 
     expect(errorMsg.checkVisibility()).toBe(false);
   });
 
   it('error message should not be hidden before input is fired', () => {
-    initialize(inputSelector, errorSelector);
+    initialize(inputSelector);
     expect(errorMsg.checkVisibility()).toBe(true);
   });
 
