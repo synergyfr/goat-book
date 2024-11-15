@@ -1,5 +1,7 @@
 import time
 import os
+from datetime import datetime
+from pathlib import Path
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 
@@ -11,6 +13,7 @@ from .server_tools import reset_database
 
 MAX_WAIT = 5
 
+SCREEN_DUMP_LOCATION = Path(__file__).absolute().parent / 'screendumps'
 
 def wait(fn):
     def modified_fn(*args, **kwargs):
@@ -35,7 +38,13 @@ class FunctionalTest(StaticLiveServerTestCase):
             reset_database(self.test_server)
 
     def tearDown(self):
+        if self._test_has_failed():
+            if not SCREEN_DUMP_LOCATION.exists():
+                SCREEN_DUMP_LOCATION.mkdir(parents=True)
+            self.take_screenshot()
+            self.dump_html()
         self.browser.quit()
+        super().tearDown()
 
     @wait
     def wait_for(self, fn):
@@ -69,3 +78,23 @@ class FunctionalTest(StaticLiveServerTestCase):
         self.get_item_input_box().send_keys(Keys.ENTER)
         item_number = num_rows + 1
         self.wait_for_row_in_list_table(f'{item_number}: {item_text}')
+
+    def _test_has_failed(self):
+        # slightly obscure but couldn't find a better way!
+        return self._outcome.result.failures or self._outcome.result.errors
+
+    def take_screenshot(self):
+        path = SCREEN_DUMP_LOCATION / self._get_filename('png')
+        print('screenshotting to', path)
+        self.browser.get_screenshot_as_file(str(path))
+
+    def dump_html(self):
+        path = SCREEN_DUMP_LOCATION / self._get_filename('html')
+        print('dumping page HTML to', path)
+        path.write_text(self.browser.page_source)
+
+    def _get_filename(self, extension):
+        timestamp = datetime.now().isoformat().replace(':', '.')[:19]
+        return (
+            f'{self.__class__.__name__}.{self._testMethodName}-{timestamp}.{extension}'
+        )
