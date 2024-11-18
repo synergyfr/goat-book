@@ -6,6 +6,7 @@ from lists.forms import ExistingListItemForm, ItemForm
 
 User = get_user_model()
 
+
 def home_page(request):
     return render(request, 'home.html', {'form': ItemForm()})
 
@@ -25,7 +26,7 @@ def view_list(request, list_id):
         {
             'list': our_list,
             'form': form
-    })
+        })
 
 
 def new_list(request):
@@ -38,8 +39,18 @@ def new_list(request):
         form.save(for_list=nulist)
         return redirect(nulist)
     else:
-        return render(request, 'home.html', {'form': form })
+        return render(request, 'home.html', {'form': form})
+
 
 def my_lists(request, email):
     owner = User.objects.get(email=email)
     return render(request, 'my_lists.html', {'owner': owner})
+
+
+def share_list(request, list_id):
+    mylist = List.objects.get(id=list_id)
+    email = request.POST.get('sharee')
+    user = User.objects.filter(email=email).first()
+    if user:
+        mylist.shared_with.add(user)
+    return redirect(mylist)

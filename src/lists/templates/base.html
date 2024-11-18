@@ -13,7 +13,7 @@
       <div class="container-fluid">
         <a class="navbar-brand" href="/">Superlists</a>
         {% if user.email %}
-          <a href="{% url 'my_lists' user.email %}">My lists</a>
+          <a href="{% url 'my_lists' user.email %}">My Lists</a>
           <span class="navbar-text">Logged in as {{ user.email }}</span>
           <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
@@ -70,6 +70,8 @@
         {% block extra_content %}{% endblock %}
       </div>
     </div>
+
+    {% block share %}{% endblock %}
   </div>
 
   <script src="/static/lists.js"></script>

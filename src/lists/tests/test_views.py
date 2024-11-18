@@ -163,3 +163,19 @@ class MyListsTest(TestCase):
         correct_user = User.objects.create(email='a@b.com')
         response = self.client.get('/lists/users/a@b.com/')
         self.assertEqual(response.context['owner'], correct_user)
+
+class ShareListTest(TestCase):
+
+    def test_post_redirects_to_lists_page(self):
+
+        new_list = List.objects.create()
+        response = self.client.post(f'/lists/{new_list.id}/share', data={'sharee': 'a@b.com'})
+        self.assertRedirects(response, f'/lists/{new_list.id}/')
+
+    def test_user_added_to_shared_with(self):
+
+        user = User.objects.create(email='a@b.com')
+        user2 = User.objects.create(email='another@example.com')
+        new_list = List.objects.create(owner=user)
+        self.client.post(f'/lists/{new_list.id}/share', data={'sharee': 'another@example.com'})
+        self.assertIn(user2, new_list.shared_with.all())
