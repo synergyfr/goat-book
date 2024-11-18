@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model
-from django.views.generic import FormView
+from django.views.generic import FormView, CreateView, DetailView
 
 from lists.models import Item, List
 from lists.forms import ExistingListItemForm, ItemForm
@@ -29,6 +29,28 @@ def view_list(request, list_id):
             'list': our_list,
             'form': form
         })
+
+
+class NewListView(CreateView, HomePageView):
+
+    def form_valid(self, form):
+        list_ = List.objects.create()
+        if self.request.user.is_authenticated:
+            list_.owner = self.request.user
+            list_.save()
+        form.save(for_list=list_)
+        return redirect(list_)
+
+
+class ViewAndAddToList(DetailView, CreateView):
+
+    model = List
+    template_name = 'list.html'
+    form_class = ExistingListItemForm
+
+    def get_form(self):
+        self.object = self.get_object()
+        return self.form_class(for_list=self.object, data=self.request.POST)
 
 
 def new_list(request):

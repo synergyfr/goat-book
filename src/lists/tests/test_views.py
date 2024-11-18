@@ -130,13 +130,25 @@ class NewListTest(TestCase):
         new_list = List.objects.get()
         self.assertRedirects(response, f'/lists/{new_list.id}/')
 
-    def test_validation_errors_are_send_back_to_home_page_template(self):
+    def test_invalid_input_means_nothing_saved_to_db(self):
+        self.post_invalid_input()
+        self.assertEqual(List.objects.all().count(), 0)
+        self.assertEqual(Item.objects.count(), 0)
+
+    def test_invalid_input_renders_home_template(self):
+        response = self.post_invalid_input()
+        self.assertTemplateUsed(response, 'home.html')
+
+    def test_invalid_input_passes_form_with_errors(self):
+        response = self.post_invalid_input()
+        expected_error = escape(EMPTY_ITEM_ERROR)
+        self.assertIsInstance(response.context['form'], ItemForm)
+        self.assertContains(response, expected_error)
+
+    def post_invalid_input(self):
         response = self.client.post('/lists/new', data={'text': ''})
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'home.html')
-        self.assertIsInstance(response.context['form'], ItemForm)
-        expected_error = escape(EMPTY_ITEM_ERROR)
-        self.assertContains(response, expected_error)
+        return response
 
     def test_invalid_list_items_arent_saved(self):
         self.client.post('/lists/new', data={'text': '' })
