@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model
+from django.views.generic import FormView
 
 from lists.models import Item, List
 from lists.forms import ExistingListItemForm, ItemForm
@@ -7,8 +8,9 @@ from lists.forms import ExistingListItemForm, ItemForm
 User = get_user_model()
 
 
-def home_page(request):
-    return render(request, 'home.html', {'form': ItemForm()})
+class HomePageView(FormView):
+    template_name = 'home.html'
+    form_class = ItemForm
 
 
 def view_list(request, list_id):
