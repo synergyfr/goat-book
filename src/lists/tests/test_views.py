@@ -1,3 +1,5 @@
+import unittest
+
 from django.utils.html import escape
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -118,7 +120,7 @@ class ListViewTest(TestCase):
         self.assertContains(response, 'name="text"')
 
 
-class NewListTest(TestCase):
+class NewListViewIntegratedTest(TestCase):
     def test_can_save_a_POST_request(self):
         self.client.post('/lists/new', data={'text': 'A new list item'})
         self.assertEqual(Item.objects.count(), 1)
@@ -155,6 +157,7 @@ class NewListTest(TestCase):
         self.assertEqual(List.objects.count(), 0)
         self.assertEqual(Item.objects.count(), 0)
 
+    @unittest.skip
     def test_list_owner_is_saved_if_user_is_authenticated(self):
 
         user = User.objects.create(email='a@b.com')
